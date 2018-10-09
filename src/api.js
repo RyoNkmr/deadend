@@ -7,11 +7,11 @@ const path = require('path');
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
-const stat = promisify(fs.stat);
-const isdir = _path => stat(_path).then(stat => stat.isDirectory());
-const isfile = _path => stat(_path).then(stat => stat.isFile());
+// const stat = promisify(fs.stat);
+// const isdir = _path => stat(_path).then(stat => stat.isDirectory());
+// const isfile = _path => stat(_path).then(stat => stat.isFile());
 
-const allowedFileType = ['json', 'js'];
+// const allowedFileType = ['json', 'js'];
 const WILDCARD = 'any';
 
 const requestMatcher = (req, fileList, targetName = `index`) => {
@@ -30,16 +30,22 @@ const requestMatcher = (req, fileList, targetName = `index`) => {
   return null;
 }
 
+
+const isIntegerString = string => /^\d+$/.test(string);
+
 const generatePathCandidates = url => 
   url.split('/')
     .reduce((accumulator, segment) => {
+      const isInteger = isIntegerString(segment);
+
       if (accumulator.length === 0) {
-        return /^\d+$/.test(segment) ? [segment, WILDCARD] : [segment];
+        return isInteger ? [segment, WILDCARD] : [segment];
       }
 
-      if (!/^\d+$/.test(segment)) {
+      if (!isInteger) {
         return accumulator.map(candidate => `${candidate}/${segment}`);
       }
+
       return accumulator.reduce((flatten, candidate) => ([
         ...flatten,
         ...[segment, WILDCARD].map(tail => `${candidate}/${tail}`),
