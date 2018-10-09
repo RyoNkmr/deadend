@@ -15,7 +15,7 @@ const allowedFileType = ['json', 'js'];
 const WILDCARD = 'any';
 
 const requestMatcher = (req, fileList, targetName = `index`) => {
-  if (!fileList && fileList.length === 0) {
+  if (!fileList || fileList.length === 0) {
     return null
   }
   const { method } = req;
@@ -30,6 +30,22 @@ const requestMatcher = (req, fileList, targetName = `index`) => {
   return null;
 }
 
+const generatePathCandidates = url => 
+  url.split('/')
+    .reduce((accumulator, segment) => {
+      if (accumulator.length === 0) {
+        return /^\d+$/.test(segment) ? [segment, WILDCARD] : [segment];
+      }
+
+      if (!/^\d+$/.test(segment)) {
+        return accumulator.map(candidate => `${candidate}/${segment}`);
+      }
+      return accumulator.reduce((flatten, candidate) => ([
+        ...flatten,
+        ...[segment, WILDCARD].map(tail => `${candidate}/${tail}`),
+      ]), []);
+    }, []);
+
 const createMatchResult = (parentPath, match) => match && ({
   extension: match[1],
   filename: match[0],
@@ -37,8 +53,8 @@ const createMatchResult = (parentPath, match) => match && ({
 });
 
 const createApiRequestHandler = sourceDirPath => {
-  const search = async req => {
-    const base = path.join(sourceDirPath, req.url);
+  const _search = async (req, requestPath = req.url) => {
+    const base = path.join(sourceDirPath, requestPath);
     const fileList = await readdir(base).catch(error => {
       if (error.code === 'ENOENT') {
         return [];
@@ -52,16 +68,32 @@ const createApiRequestHandler = sourceDirPath => {
     }
 
     const parentOfBase = path.join(base, '..');
-    const fileListOnRoot = await readdir(parentOfBase);
-    const filename = req.url.replace(/^\/.*\/(.+)$/, '_$1');
+    const fileListOnRoot = await readdir(parentOfBase).catch(error => {
+      if (error.code === 'ENOENT') {
+        return [];
+      }
+    });
+
+    const filename = requestPath.replace(/^\/.*\/(\d+)$/, '_$1');
     const fileMatched = requestMatcher(req, fileListOnRoot, filename);
 
-    if (fileMatched === null) {
+    if (fileMatched === null && requestPath !== filename) {
       const wildCardMatch = requestMatcher(req, fileListOnRoot, WILDCARD);
       return createMatchResult(parentOfBase, wildCardMatch);
     }
 
     return createMatchResult(parentOfBase, fileMatched);
+  }
+
+  const search = async req => {
+    const pathCandidates = generatePathCandidates(req.url);
+    for (const candidate of pathCandidates) {
+      const match = await _search(req, candidate);
+      if (match) {
+        return match;
+      }
+    }
+    return null;
   }
 
   return async (req, res) => {
