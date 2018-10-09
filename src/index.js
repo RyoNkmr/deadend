@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
+const app = require('express')();
+const createApi = require('./api');
+
 const path = require('path');
+
 const {
   readdirRecursive,
   classifyAllowedExtentions,
@@ -10,7 +14,10 @@ const main = async argv => {
   const { apiDefinitionsDirectory } = argv;
   const fileList = await readdirRecursive(apiDefinitionsDirectory);
   const classifiedList = classifyAllowedExtentions(fileList);
-  console.log(classifiedList);
+  // console.log(classifiedList);
+
+  app.use(createApi(apiDefinitionsDirectory));
+  app.listen(8888);
 }
 
 require('yargs')
