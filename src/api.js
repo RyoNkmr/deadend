@@ -14,7 +14,7 @@ const isfile = _path => stat(_path).then(stat => stat.isFile());
 const allowedFileType = ['json', 'js'];
 const WILDCARD = 'any';
 
-const requestMatcher = (req, fileList, targetName = `(?:index|${WILDCARD})`) => {
+const requestMatcher = (req, fileList, targetName = `index`) => {
   if (!fileList && fileList.length === 0) {
     return null
   }
@@ -30,10 +30,10 @@ const requestMatcher = (req, fileList, targetName = `(?:index|${WILDCARD})`) => 
   return null;
 }
 
-const createMatchResult = (parentPath, [filename, extension]) => ({
-  extension,
-  filename,
-  fullpath: path.join(parentPath, filename),
+const createMatchResult = (parentPath, match) => match && ({
+  extension: match[1],
+  filename: match[0],
+  fullpath: path.join(parentPath, match[0]),
 });
 
 const createApiRequestHandler = sourceDirPath => {
@@ -57,7 +57,8 @@ const createApiRequestHandler = sourceDirPath => {
     const fileMatched = requestMatcher(req, fileListOnRoot, filename);
 
     if (fileMatched === null) {
-      return null;
+      const wildCardMatch = requestMatcher(req, fileListOnRoot, WILDCARD);
+      return createMatchResult(parentOfBase, wildCardMatch);
     }
 
     return createMatchResult(parentOfBase, fileMatched);
@@ -74,7 +75,7 @@ const createApiRequestHandler = sourceDirPath => {
         return;
       }
 
-      const { matchedFilename, extension, fullpath } = matched;
+      const { filename, extension, fullpath } = matched;
 
       console.log({ ...matched, url });
       const data = await readFile(fullpath);
