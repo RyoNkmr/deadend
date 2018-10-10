@@ -12,7 +12,7 @@
   "devDependencies": {},
   "bin": "./bin/retty-dev-api",
   "scripts": {
-    "start": "node src/index.js _contents",
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

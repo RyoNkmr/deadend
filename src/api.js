@@ -1,25 +1,21 @@
-const express = require('express');
-const router = express.Router();
-
 const { promisify } = require('util');
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
+const router = express.Router();
+const FileLoader = require('./FileLoader');
 
 const readdir = promisify(fs.readdir);
-const readFile = promisify(fs.readFile);
-// const stat = promisify(fs.stat);
-// const isdir = _path => stat(_path).then(stat => stat.isDirectory());
-// const isfile = _path => stat(_path).then(stat => stat.isFile());
 
-// const allowedFileType = ['json', 'js'];
 const WILDCARD = 'any';
 
 const requestMatcher = (req, fileList, targetName = `index`) => {
   if (!fileList || fileList.length === 0) {
     return null
   }
+
   const { method } = req;
-  const pattern = new RegExp(`^${targetName}\\.${method.toLowerCase()}\\.(js(?:on))?$`);
+  const pattern = new RegExp(`^${targetName}\\.${method.toLowerCase()}\\.(js(?:on)?)$`);
 
   for (const file of fileList) {
     const matched = pattern.exec(file);
@@ -80,7 +76,7 @@ const createApiRequestHandler = sourceDirPath => {
       }
     });
 
-    const filename = requestPath.replace(/^\/.*\/(\d+)$/, '_$1');
+    const filename = requestPath.replace(/^(?:\/.*)?\/(\w+)$/, '_$1');
     const fileMatched = requestMatcher(req, fileListOnRoot, filename);
 
     if (fileMatched === null && requestPath !== filename) {
@@ -114,14 +110,9 @@ const createApiRequestHandler = sourceDirPath => {
       }
 
       const { filename, extension, fullpath } = matched;
+      const getter = await FileLoader.load(fullpath);
 
-      console.log({ ...matched, url });
-      const data = await readFile(fullpath);
-      if (extension === 'json') {
-        return JSON.parse(data);
-      }
-      return data;
-
+      return getter(req);
     } catch(error) {
       console.error(error);
       if (error.code === 'ENOENT') {
@@ -150,9 +141,9 @@ const createApi = sourceDirPath => {
       if (req.method === 'options') {
         handleOption(res);
       }
-      const requestFilePath = await handleApiRequest(req, res);
-      // const data = await readFile(requestFilePath);
-      res.json(requestFilePath);
+      const data = await handleApiRequest(req, res);
+      console.log(data);
+      res.json(data);
     } catch(error) {
       console.error(error);
       res.status(500).send(error);
