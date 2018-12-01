@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const app = require('express')();
+const createApi = require('../src/api');
+
+const {
+  readdirRecursive,
+  // classifyAllowedExtentions,
+} = require('../src/fileUtils');
+
+const main = async argv => {
+  const { apiDefinitionsDirectory } = argv;
+  const fileList = await readdirRecursive(apiDefinitionsDirectory);
+  // const classifiedList = classifyAllowedExtentions(fileList);
+  app.use(createApi(apiDefinitionsDirectory));
+  app.listen(argv.port);
+}
+
+require('yargs')
+  .option('port', {
+    alias: 'p',
+    description: 'api port',
+    default: 8888,
+    type: 'number',
+  })
+  .command({
+    command: '$0 [apiDefinitionsDirectory]',
+    description: 'run mock server',
+    builder: yargs => yargs
+      .default('apiDefinitionsDirectory', '_contents'),
+    handler: argv => {
+      const apiDefinitionsDirectory = path.resolve(process.cwd(), argv.apiDefinitionsDirectory);
+      main({ ...argv, apiDefinitionsDirectory });
+    },
+  })
+  .argv;

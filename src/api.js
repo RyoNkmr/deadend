@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const router = express.Router();
 const FileLoader = require('./FileLoader');
+const logger = require('./logger');
 
 const readdir = promisify(fs.readdir);
 
@@ -128,7 +129,11 @@ const handleOption = res => {
 };
 
 const createApi = sourceDirPath => {
-  console.error(`sourceDir: ${sourceDirPath}`);
+  logger.log(`
+    sourceDir: ${sourceDirPath}
+  `);
+  logger.warn('warn');
+  logger.alert('alert');
 
   if (!sourceDirPath) {
     throw new Error('sourceDirPath is required');
