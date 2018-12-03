@@ -129,11 +129,10 @@ const handleOption = res => {
 };
 
 const createApi = sourceDirPath => {
-  logger.log(`
+  logger.debug(`
+    Reading fixture files from
     sourceDir: ${sourceDirPath}
   `);
-  logger.warn('warn');
-  logger.alert('alert');
 
   if (!sourceDirPath) {
     throw new Error('sourceDirPath is required');

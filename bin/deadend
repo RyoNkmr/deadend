@@ -3,6 +3,7 @@
 const path = require('path');
 const app = require('express')();
 const createApi = require('../src/api');
+const logger = require('../src/logger');
 
 const {
   readdirRecursive,
@@ -15,6 +16,7 @@ const main = async argv => {
   // const classifiedList = classifyAllowedExtentions(fileList);
   app.use(createApi(apiDefinitionsDirectory));
   app.listen(argv.port);
+  logger.log(`deadend at http://localhost:${argv.port}`);
 }
 
 require('yargs')
