@@ -3,14 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const router = express.Router();
-const FileLoader = require('./FileLoader');
-const logger = require('./logger');
+const { fileLoader, logger } = require('../utilities');
 
 const readdir = promisify(fs.readdir);
 
 const WILDCARD = 'any';
 
-const requestMatcher = (req, fileList, targetName = `index`) => {
+const requestMatcher = (req, fileList, targetName = 'index') => {
   if (!fileList || fileList.length === 0) {
     return null
   }
@@ -89,8 +88,7 @@ const createApiRequestHandler = sourceDirPath => {
   }
 
   const search = async req => {
-    const pathCandidates = generatePathCandidates(req.url);
-    for (const candidate of pathCandidates) {
+    for (const candidate of generatePathCandidates(req.url)) {
       const match = await _search(req, candidate);
       if (match) {
         return match;
@@ -111,11 +109,11 @@ const createApiRequestHandler = sourceDirPath => {
       }
 
       const { filename, extension, fullpath } = matched;
-      const getter = await FileLoader.load(fullpath);
+      const getter = await fileLoader.load(fullpath);
 
       return getter(req);
     } catch(error) {
-      console.error(error);
+      logger.alert(error);
       if (error.code === 'ENOENT') {
         res.sendStatus(404);
         return;
@@ -126,6 +124,10 @@ const createApiRequestHandler = sourceDirPath => {
 
 const handleOption = res => {
   res.sendStatus(200);
+};
+
+const logRequest = req => {
+  logger.request(req);
 };
 
 const createApi = sourceDirPath => {
@@ -145,8 +147,8 @@ const createApi = sourceDirPath => {
       if (req.method === 'options') {
         handleOption(res);
       }
+      logRequest(req);
       const data = await handleApiRequest(req, res);
-      console.log(data);
       res.json(data);
     } catch(error) {
       console.error(error);

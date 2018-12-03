@@ -2,13 +2,13 @@
 
 const path = require('path');
 const app = require('express')();
-const createApi = require('../src/api');
-const logger = require('../src/logger');
+const { createApi } = require('../src');
+const logger = require('../src/utilities/logger');
 
 const {
   readdirRecursive,
   // classifyAllowedExtentions,
-} = require('../src/fileUtils');
+} = require('../src/utilities/fileUtils');
 
 const main = async argv => {
   const { apiDefinitionsDirectory } = argv;

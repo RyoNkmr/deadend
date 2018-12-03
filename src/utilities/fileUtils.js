@@ -49,10 +49,10 @@ const classifyAllowedExtentions = fileList => fileList.reduce((accumulator, file
   return {
     ...accumulator,
     [extension]: [ ...accumulator[extension], filePath],
-  }
+  };
 }, { js: [], json: [] })
 
 module.exports = {
   readdirRecursive,
   classifyAllowedExtentions,
-}
+};

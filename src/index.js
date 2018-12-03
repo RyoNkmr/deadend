@@ -1,3 +1,3 @@
 module.exports = {
-  createApi: require('./api'),
+  createApi: require('./modules/api'),
 };
